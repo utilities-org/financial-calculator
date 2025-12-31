@@ -41,6 +41,37 @@ function isMode(value: string): value is HomeLoanMode {
   return value === "emi" || value === "neutralize";
 }
 
+const EMBED_BRANDING_KEYS = [
+  "embed",
+  "e",
+  "brand",
+  "brandName",
+  "logo",
+  "logoUrl",
+  "accent",
+  "primary",
+  "accent2",
+  "bg",
+  "background",
+  "fg",
+  "foreground",
+  "fontFamily",
+  "font",
+  "fontUrl",
+];
+
+function mergeBrandingParams(
+  baseInputsParams: URLSearchParams,
+  current: URLSearchParams
+): URLSearchParams {
+  const next = new URLSearchParams(baseInputsParams);
+  for (const key of EMBED_BRANDING_KEYS) {
+    const v = current.get(key);
+    if (v !== null) next.set(key, v);
+  }
+  return next;
+}
+
 export default function CalculatorClient() {
   const router = useRouter();
   const pathname = usePathname();
@@ -144,7 +175,9 @@ export default function CalculatorClient() {
     const computed = calculateHomeLoan(draft);
     setResult(computed);
 
-    const params = searchParamsFromInputs(computed.inputs);
+    const inputsParams = searchParamsFromInputs(computed.inputs);
+    const currentParams = new URLSearchParams(searchParams?.toString());
+    const params = mergeBrandingParams(inputsParams, currentParams);
     const nextQuery = params.toString();
     ignoreNextSearchParamsRef.current = nextQuery;
     router.replace(`${pathname}?${nextQuery}`);
