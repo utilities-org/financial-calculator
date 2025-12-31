@@ -316,23 +316,23 @@ export default function CalculatorClient() {
 
         <CardContent className="space-y-4">
           {result ? (
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg border p-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="min-w-0 rounded-lg border p-3">
                 <div className="text-muted-foreground text-xs">Invested</div>
-                <div className="text-sm font-semibold tabular-nums">
+                <div className="break-words text-sm font-semibold tabular-nums">
                   {formatINR(result.totalInvested)}
                 </div>
                 <div className="text-muted-foreground mt-0.5 text-xs">
                   {formatIndianCompact(result.totalInvested)}
                 </div>
               </div>
-              <div className="rounded-lg border p-3">
+              <div className="min-w-0 rounded-lg border p-3">
                 <div className="text-muted-foreground text-xs">Returns</div>
                 <div
                   className={
                     result.estimatedReturns >= 0
-                      ? "text-emerald-700 dark:text-emerald-400 text-sm font-semibold tabular-nums"
-                      : "text-destructive text-sm font-semibold tabular-nums"
+                      ? "break-words text-emerald-700 dark:text-emerald-400 text-sm font-semibold tabular-nums"
+                      : "break-words text-destructive text-sm font-semibold tabular-nums"
                   }
                 >
                   {formatINR(result.estimatedReturns)}
@@ -342,7 +342,7 @@ export default function CalculatorClient() {
                 </div>
               </div>
               <div
-                className="rounded-lg border p-3"
+                className="min-w-0 rounded-lg border p-3"
                 style={{
                   borderColor: "var(--color-chart-4)",
                   background:
@@ -351,7 +351,7 @@ export default function CalculatorClient() {
               >
                 <div className="text-muted-foreground text-xs">Maturity value</div>
                 <div
-                  className="text-lg font-semibold tabular-nums"
+                  className="break-words text-lg font-semibold tabular-nums"
                   style={{ color: "var(--color-chart-4)" }}
                 >
                   {formatINR(result.maturityValue)}
@@ -381,7 +381,7 @@ export default function CalculatorClient() {
       </Card>
 
       {result ? (
-        <div className="md:col-span-2">
+        <div className="min-w-0 md:col-span-2">
           <InvestmentScheduleTable result={result} />
         </div>
       ) : null}

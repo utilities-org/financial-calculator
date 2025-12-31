@@ -17,7 +17,7 @@ export default function InvestmentScheduleTable({
   const showSipCol = result.inputs.mode !== "lumpsum";
 
   return (
-    <Card>
+    <Card className="min-w-0">
       <CardHeader>
         <CardTitle>Year-wise breakdown</CardTitle>
         <CardDescription>
@@ -25,7 +25,7 @@ export default function InvestmentScheduleTable({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <div className="min-w-0 w-full max-w-full overflow-x-auto overscroll-x-contain">
           <table className="w-full min-w-[760px] border-collapse text-sm">
             <thead>
               <tr className="text-muted-foreground border-b">
