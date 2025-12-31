@@ -37,7 +37,7 @@ function numberFromInput(value: string): number {
 }
 
 function isMode(value: string): value is InvestmentMode {
-  return value === "sip" || value === "stepup" || value === "lumpsum";
+  return value === "sip" || value === "stepup" || value === "lumpsum" || value === "hybrid";
 }
 
 export default function CalculatorClient() {
@@ -91,6 +91,40 @@ export default function CalculatorClient() {
       const monthlyInvestment =
         normalized.mode === "lumpsum" ? 5000 : normalized.monthlyInvestment;
 
+      if (nextMode === "hybrid") {
+        const stepUpEnabled =
+          normalized.mode === "hybrid"
+            ? normalized.stepUpEnabled
+            : normalized.mode === "stepup";
+
+        const annualStepUpPercent =
+          normalized.mode === "hybrid"
+            ? normalized.annualStepUpPercent
+            : normalized.mode === "stepup"
+              ? normalized.annualStepUpPercent
+              : 10;
+
+        const lumpsumAmount =
+          normalized.mode === "hybrid"
+            ? normalized.lumpsumAmount
+            : normalized.mode === "lumpsum"
+              ? normalized.lumpsumInvestment
+              : 100000;
+
+        return {
+          mode: "hybrid",
+          monthlyInvestment,
+          stepUpEnabled,
+          annualStepUpPercent,
+          lumpsumAmount,
+          lumpsumEveryYears: 1,
+          lumpsumStartYear: 1,
+          lumpsumEndYear: normalized.years,
+          annualReturnRate: normalized.annualReturnRate,
+          years: normalized.years,
+        };
+      }
+
       if (nextMode === "stepup") {
         return {
           mode: "stepup",
@@ -121,6 +155,17 @@ export default function CalculatorClient() {
     if (normalized.mode === "lumpsum") {
       if (normalized.lumpsumInvestment <= 0)
         issues.push("Lumpsum amount must be greater than 0.");
+    } else if (normalized.mode === "hybrid") {
+      if (normalized.monthlyInvestment <= 0)
+        issues.push("Monthly SIP amount must be greater than 0.");
+      if (normalized.lumpsumAmount <= 0)
+        issues.push("Periodic lumpsum amount must be greater than 0.");
+      if (normalized.lumpsumEveryYears < 1)
+        issues.push("Lumpsum frequency must be at least every 1 year.");
+      if (normalized.lumpsumStartYear < 1 || normalized.lumpsumStartYear > normalized.years)
+        issues.push("Lumpsum start year must be within the time period.");
+      if (normalized.lumpsumEndYear < normalized.lumpsumStartYear)
+        issues.push("Lumpsum end year must be after start year.");
     } else {
       if (normalized.monthlyInvestment <= 0)
         issues.push("Monthly SIP amount must be greater than 0.");
@@ -183,6 +228,7 @@ export default function CalculatorClient() {
                     <SelectGroup>
                       <SelectItem value="sip">SIP</SelectItem>
                       <SelectItem value="stepup">Step-up SIP</SelectItem>
+                      <SelectItem value="hybrid">SIP + Lumpsum</SelectItem>
                       <SelectItem value="lumpsum">Lumpsum</SelectItem>
                     </SelectGroup>
                   </SelectContent>
@@ -257,6 +303,131 @@ export default function CalculatorClient() {
                 </Field>
               )}
 
+              {draft.mode === "hybrid" && (
+                <>
+                  <Field>
+                    <FieldLabel>Periodic lumpsum deposit (₹)</FieldLabel>
+                    <Input
+                      inputMode="numeric"
+                      value={draft.lumpsumAmount}
+                      onChange={(e) =>
+                        setDraft((p) =>
+                          p.mode === "hybrid"
+                            ? {
+                                ...p,
+                                lumpsumAmount: numberFromInput(e.target.value),
+                              }
+                            : p
+                        )
+                      }
+                    />
+                    {formatIndianAmountHint(draft.lumpsumAmount) ? (
+                      <div className="text-muted-foreground mt-1 text-xs">
+                        {formatIndianAmountHint(draft.lumpsumAmount)}
+                      </div>
+                    ) : null}
+                  </Field>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field>
+                      <FieldLabel>Deposit every (years)</FieldLabel>
+                      <Input
+                        inputMode="numeric"
+                        value={draft.lumpsumEveryYears}
+                        onChange={(e) =>
+                          setDraft((p) =>
+                            p.mode === "hybrid"
+                              ? {
+                                  ...p,
+                                  lumpsumEveryYears: numberFromInput(e.target.value),
+                                }
+                              : p
+                          )
+                        }
+                      />
+                    </Field>
+
+                    <Field>
+                      <FieldLabel>Start year</FieldLabel>
+                      <Input
+                        inputMode="numeric"
+                        value={draft.lumpsumStartYear}
+                        onChange={(e) =>
+                          setDraft((p) =>
+                            p.mode === "hybrid"
+                              ? {
+                                  ...p,
+                                  lumpsumStartYear: numberFromInput(e.target.value),
+                                }
+                              : p
+                          )
+                        }
+                      />
+                    </Field>
+
+                    <Field>
+                      <FieldLabel>End year</FieldLabel>
+                      <Input
+                        inputMode="numeric"
+                        value={draft.lumpsumEndYear}
+                        onChange={(e) =>
+                          setDraft((p) =>
+                            p.mode === "hybrid"
+                              ? {
+                                  ...p,
+                                  lumpsumEndYear: numberFromInput(e.target.value),
+                                }
+                              : p
+                          )
+                        }
+                      />
+                    </Field>
+
+                    <Field>
+                      <FieldLabel>Enable step-up</FieldLabel>
+                      <label className="flex items-center gap-2 rounded-md border px-3 py-2">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 accent-current"
+                          checked={draft.stepUpEnabled}
+                          onChange={(e) =>
+                            setDraft((p) =>
+                              p.mode === "hybrid"
+                                ? {
+                                    ...p,
+                                    stepUpEnabled: e.target.checked,
+                                  }
+                                : p
+                            )
+                          }
+                        />
+                        <span className="text-sm">Step-up SIP yearly</span>
+                      </label>
+                    </Field>
+                  </div>
+
+                  {draft.stepUpEnabled ? (
+                    <Field>
+                      <FieldLabel>Annual step-up (%)</FieldLabel>
+                      <Input
+                        inputMode="decimal"
+                        value={draft.annualStepUpPercent}
+                        onChange={(e) =>
+                          setDraft((p) =>
+                            p.mode === "hybrid"
+                              ? {
+                                  ...p,
+                                  annualStepUpPercent: numberFromInput(e.target.value),
+                                }
+                              : p
+                          )
+                        }
+                      />
+                    </Field>
+                  ) : null}
+                </>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <Field>
                   <FieldLabel>Expected return (% p.a.)</FieldLabel>
@@ -319,7 +490,7 @@ export default function CalculatorClient() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="min-w-0 rounded-lg border p-3">
                 <div className="text-muted-foreground text-xs">Invested</div>
-                <div className="break-words text-sm font-semibold tabular-nums">
+                <div className="wrap-break-word text-sm font-semibold tabular-nums">
                   {formatINR(result.totalInvested)}
                 </div>
                 <div className="text-muted-foreground mt-0.5 text-xs">
@@ -331,8 +502,8 @@ export default function CalculatorClient() {
                 <div
                   className={
                     result.estimatedReturns >= 0
-                      ? "break-words text-emerald-700 dark:text-emerald-400 text-sm font-semibold tabular-nums"
-                      : "break-words text-destructive text-sm font-semibold tabular-nums"
+                      ? "wrap-break-word text-emerald-700 dark:text-emerald-400 text-sm font-semibold tabular-nums"
+                      : "wrap-break-word text-destructive text-sm font-semibold tabular-nums"
                   }
                 >
                   {formatINR(result.estimatedReturns)}
@@ -351,7 +522,7 @@ export default function CalculatorClient() {
               >
                 <div className="text-muted-foreground text-xs">Maturity value</div>
                 <div
-                  className="break-words text-lg font-semibold tabular-nums"
+                  className="wrap-break-word text-lg font-semibold tabular-nums"
                   style={{ color: "var(--color-chart-4)" }}
                 >
                   {formatINR(result.maturityValue)}

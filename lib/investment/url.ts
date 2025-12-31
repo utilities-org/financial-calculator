@@ -5,6 +5,9 @@ const DEFAULTS = {
   monthlyInvestment: 5000,
   annualStepUpPercent: 10,
   lumpsumInvestment: 100000,
+  hybridLumpsumAmount: 100000,
+  hybridLumpsumEveryYears: 1,
+  hybridLumpsumStartYear: 1,
   annualReturnRate: 12,
   years: 10,
 };
@@ -26,7 +29,7 @@ function parseNumber(searchParams: URLSearchParams, key: string): number | null 
 
 function parseMode(searchParams: URLSearchParams): InvestmentMode {
   const m = (getFirst(searchParams, "mode") ?? "").toLowerCase();
-  if (m === "sip" || m === "stepup" || m === "lumpsum") return m;
+  if (m === "sip" || m === "stepup" || m === "lumpsum" || m === "hybrid") return m;
   return DEFAULTS.mode;
 }
 
@@ -52,6 +55,51 @@ export function inputsFromSearchParams(searchParams: URLSearchParams): Investmen
     return {
       mode: "lumpsum",
       lumpsumInvestment,
+      annualReturnRate,
+      years,
+    };
+  }
+
+  if (mode === "hybrid") {
+    const monthlyInvestment =
+      parseNumber(searchParams, "amt") ??
+      parseNumber(searchParams, "m") ??
+      DEFAULTS.monthlyInvestment;
+
+    const lumpsumAmount =
+      parseNumber(searchParams, "lump") ??
+      parseNumber(searchParams, "lumpAmt") ??
+      DEFAULTS.hybridLumpsumAmount;
+
+    const lumpsumEveryYears =
+      parseNumber(searchParams, "every") ??
+      parseNumber(searchParams, "freq") ??
+      DEFAULTS.hybridLumpsumEveryYears;
+
+    const lumpsumStartYear =
+      parseNumber(searchParams, "start") ?? DEFAULTS.hybridLumpsumStartYear;
+
+    const lumpsumEndYear =
+      parseNumber(searchParams, "end") ?? years;
+
+    const stepUpEnabledRaw =
+      getFirst(searchParams, "stepUp") ?? getFirst(searchParams, "su");
+    const stepUpEnabled = stepUpEnabledRaw === "1" || stepUpEnabledRaw === "true";
+
+    const annualStepUpPercent =
+      parseNumber(searchParams, "step") ??
+      parseNumber(searchParams, "s") ??
+      DEFAULTS.annualStepUpPercent;
+
+    return {
+      mode: "hybrid",
+      monthlyInvestment,
+      stepUpEnabled,
+      annualStepUpPercent,
+      lumpsumAmount,
+      lumpsumEveryYears,
+      lumpsumStartYear,
+      lumpsumEndYear,
       annualReturnRate,
       years,
     };
@@ -101,6 +149,21 @@ export function searchParamsFromInputs(inputs: InvestmentInputs): URLSearchParam
     return params;
   }
 
+  if (inputs.mode === "hybrid") {
+    setIfFinite(params, "amt", Math.round(inputs.monthlyInvestment));
+    setIfFinite(params, "lump", Math.round(inputs.lumpsumAmount));
+    setIfFinite(params, "every", Math.round(inputs.lumpsumEveryYears));
+    setIfFinite(params, "start", Math.round(inputs.lumpsumStartYear));
+    setIfFinite(params, "end", Math.round(inputs.lumpsumEndYear));
+
+    params.set("stepUp", inputs.stepUpEnabled ? "1" : "0");
+    if (inputs.stepUpEnabled) {
+      setIfFinite(params, "step", roundTo(inputs.annualStepUpPercent, 2));
+    }
+
+    return params;
+  }
+
   setIfFinite(params, "amt", Math.round(inputs.monthlyInvestment));
 
   if (inputs.mode === "stepup") {
@@ -121,6 +184,14 @@ export function hasAnyInputParams(searchParams: URLSearchParams): boolean {
     searchParams.has("amt") ||
     searchParams.has("m") ||
     searchParams.has("l") ||
+    searchParams.has("lump") ||
+    searchParams.has("lumpAmt") ||
+    searchParams.has("every") ||
+    searchParams.has("freq") ||
+    searchParams.has("start") ||
+    searchParams.has("end") ||
+    searchParams.has("stepUp") ||
+    searchParams.has("su") ||
     searchParams.has("rate") ||
     searchParams.has("r") ||
     searchParams.has("years") ||

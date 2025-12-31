@@ -15,6 +15,7 @@ export default function InvestmentScheduleTable({
   result: InvestmentResult;
 }) {
   const showSipCol = result.inputs.mode !== "lumpsum";
+  const showLumpsumYearCol = result.inputs.mode === "hybrid";
 
   return (
     <Card className="min-w-0">
@@ -26,7 +27,7 @@ export default function InvestmentScheduleTable({
       </CardHeader>
       <CardContent>
         <div className="min-w-0 w-full max-w-full overflow-x-auto overscroll-x-contain">
-          <table className="w-full min-w-[760px] border-collapse text-sm">
+          <table className="w-full min-w-190 border-collapse text-sm">
             <thead>
               <tr className="text-muted-foreground border-b">
                 <th className="px-3 py-2 text-left font-medium">Year</th>
@@ -35,6 +36,11 @@ export default function InvestmentScheduleTable({
                     {result.inputs.mode === "stepup"
                       ? "SIP/month (this year)"
                       : "SIP/month"}
+                  </th>
+                ) : null}
+                {showLumpsumYearCol ? (
+                  <th className="px-3 py-2 text-right font-medium">
+                    Lumpsum (year)
                   </th>
                 ) : null}
                 <th className="px-3 py-2 text-right font-medium">
@@ -56,6 +62,11 @@ export default function InvestmentScheduleTable({
                   {showSipCol ? (
                     <td className="px-3 py-2 text-right tabular-nums">
                       {formatINR(row.sipMonthlyForYear ?? 0)}
+                    </td>
+                  ) : null}
+                  {showLumpsumYearCol ? (
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {formatINR(row.lumpsumThisYear ?? 0)}
                     </td>
                   ) : null}
                   <td className="px-3 py-2 text-right tabular-nums">

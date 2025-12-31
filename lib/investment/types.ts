@@ -1,4 +1,4 @@
-export type InvestmentMode = "sip" | "stepup" | "lumpsum";
+export type InvestmentMode = "sip" | "stepup" | "lumpsum" | "hybrid";
 
 export type InvestmentInputs =
   | {
@@ -19,6 +19,19 @@ export type InvestmentInputs =
       lumpsumInvestment: number; // INR
       annualReturnRate: number; // %
       years: number;
+    }
+  | {
+      mode: "hybrid";
+      monthlyInvestment: number; // INR
+      stepUpEnabled: boolean;
+      annualStepUpPercent: number; // % applied once per year when stepUpEnabled
+      // Periodic lumpsum deposits (to model occasional/regular larger deposits)
+      lumpsumAmount: number; // INR per deposit
+      lumpsumEveryYears: number; // e.g. 1 = yearly, 2 = every 2 years
+      lumpsumStartYear: number; // 1-based
+      lumpsumEndYear: number; // 1-based
+      annualReturnRate: number; // %
+      years: number;
     };
 
 export type YearlyRow = {
@@ -28,6 +41,7 @@ export type YearlyRow = {
   endValue: number;
   gainsTotal: number;
   sipMonthlyForYear?: number; // only for sip/stepup
+  lumpsumThisYear?: number; // for hybrid periodic deposits
 };
 
 export type InvestmentResult = {
